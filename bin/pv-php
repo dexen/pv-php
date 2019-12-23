@@ -1,0 +1,140 @@
+#!/usr/bin/env php
+<?php
+
+ini_set('error_reporting', E_ALL);
+ini_set('display_errors', true);
+
+function td(...$a) { foreach ($a as $v) var_dump($v); die('td()'); }
+
+function terminal_output(string $str)
+{
+	$hinfo = STDERR;
+	fputs($hinfo, $str);
+}
+
+function progress_num(int $pos, int $processed_bytes, int $total_bytes = null) : string
+{
+	$R = function(int $n = null) : ?int { if ($n === null) return $n; return $n / 1024; };
+	$F2 = function(int $n = null) : string { if ($n === null) return '?'; return sprintf('%dk', $n); };
+	return sprintf("%s / %s", $F2($R($processed_bytes)), $F2($R($total_bytes)));
+}
+
+function progress_bar(int $pos, int $processed_bytes, int $total_bytes = null) : string
+{
+	$endpA_marker = '[';
+	$endpB_marker = ']';
+	$vesegment_maker = '=';
+	$vpsegment_marker = '>';
+	$bsegment_marker = ' ';
+
+	if ($total_bytes === null) {
+		$v = 1.0;
+		$perc_msg = '??%'; }
+	else {
+		$v = 1.0 * $processed_bytes / $total_bytes;
+		$perc_msg = sprintf(' % 5.1f%%', $v * 100); }
+
+	$perc_msg_width = strlen($perc_msg);
+	$fudge = ' ';
+	$fudge_width = strlen($fudge);
+
+	$bar_width = terminal_nr_columns() - $pos - $perc_msg_width - $fudge_width;
+	$endp_markers_width = strlen($endpA_marker .$endpB_marker);
+	$vpsegment_marker_width = strlen($vpsegment_marker);
+	$total_segments = $bar_width - $endp_markers_width;
+	$total_segments = max(0, $total_segments);
+	$total_segments = min($total_segments, $bar_width);
+
+	$vsegments = floor($total_segments * $v);
+	$vpsegments = ($vsegments > 0);
+	$vesegments = $vsegments - ($vpsegments * $vpsegment_marker_width);
+	$bsegments = $total_segments - $vsegments;
+
+	return $endpA_marker .str_repeat($vesegment_maker, $vesegments) .str_repeat($vpsegment_marker, $vpsegments)
+		.str_repeat($bsegment_marker, $bsegments) .$endpB_marker
+		.$perc_msg;
+}
+
+function terminal_nr_columns() : int
+{
+	static $tput_n = null;
+	if ($tput_n === null)
+			# cast to INT to avoid untrusted data (zero is fine rly)
+		$tput_n = (int)exec('tput cols');
+
+		# doesn't seem to work?
+		# the var exists in bash, but doesn't get exported to processes - why?
+	$n = getenv('COLUMNS');
+	if (empty($n))
+		$n = $tput_n;
+	if (empty($n))
+		$n = 80;
+	return $n;
+}
+
+function show_progress(int $processed_bytes, int $total_bytes = null) {
+	$pos = 0;
+	$XPOS = function(string $str) use(&$pos) : string
+	{
+		$pos += strlen($str);
+		return $str;
+	};
+
+	if (1)
+		terminal_op_clear_line();
+	else
+		terminal_output("\n");
+
+	terminal_output($XPOS(progress_num($pos, $processed_bytes, $total_bytes)));
+	terminal_output($XPOS($separator = ' '));
+	terminal_output($XPOS(progress_bar($pos, $processed_bytes, $total_bytes)));
+}
+
+function adjust_quant(int $read_quant, int $processed_bytes) : int
+{
+	$a = [ $read_quant ];
+	if ($processed_bytes > 128 * 1024)
+		$a[] = 128 * 1024;
+#	if ($processed_bytes > 1024*1024)
+#		$a[] = 1024 * 1024;
+	return max($a);
+}
+
+function terminal_op_clear_line()
+{
+	$str = "\r";
+	terminal_output($str);
+}
+
+$hin = STDIN;
+$hout = STDOUT;
+
+$read_quant = 16 * 1024;
+$processed_bytes = 0;
+$total_bytes = null;
+
+$a = fstat($hin);
+if ($a['size'] > 0)
+	$total_bytes = $a['size'];
+
+#td(compact('total_bytes'));
+
+$continue_copy = true;
+while ($continue_copy) {
+	if (feof($hin)) {
+		$continue_copy = false;
+		break; }
+	if (feof($hout)) {
+		echo 'UNEXPECTED WRITE ERROR', PHP_EOL;
+		$continue_copy = false;
+		break; }
+
+	$data = fread($hin, $read_quant);
+	fwrite($hout, $data);
+	$processed_bytes += strlen($data);
+	show_progress($processed_bytes, $total_bytes);
+	$read_quant = adjust_quant($read_quant, $processed_bytes);
+}
+
+terminal_output("\n");
+terminal_output("ALL DONE.\n");
