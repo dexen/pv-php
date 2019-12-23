@@ -1,0 +1,18 @@
+{
+	"name": "dexen/pv-php",
+	"description": "Drop in replacement for pv, the veritable pipe viewer.",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "dexen deVries",
+			"email": "dexen.devries@gmail.com"
+		}
+	],
+	"keywords": [
+		"pipe",
+		"cli",
+		"progress"
+	],
+	"homepage": "https://github.com/dexen/pv-php",
+	"type": "library"
+}
