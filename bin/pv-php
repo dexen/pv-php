@@ -125,7 +125,7 @@ while ($continue_copy) {
 		$continue_copy = false;
 		break; }
 	if (feof($hout)) {
-		echo 'UNEXPECTED WRITE ERROR', PHP_EOL;
+		terminal_output("UNEXPECTED WRITE ERROR\n");
 		$continue_copy = false;
 		break; }
 
