@@ -137,4 +137,4 @@ while ($continue_copy) {
 }
 
 terminal_output("\n");
-terminal_output("ALL DONE.\n");
+#terminal_output("ALL DONE.\n");
