@@ -12,6 +12,37 @@ function terminal_output(string $str)
 	fputs($hinfo, $str);
 }
 
+function terminal_enqueue_flush(string $str = null, bool $do_flush = true) : int
+{
+	static $last_line_len = 0;
+	static $buffer;
+
+	if ($str !== null)
+		$buffer .= $str;
+
+	if ($do_flush) {
+		$last_line_len = strlen($buffer);
+		terminal_output($buffer);
+		$buffer = ''; }
+
+	return $last_line_len;
+}
+
+function terminal_last_line_len() : int
+{
+	return terminal_enqueue_flush(null, false);
+}
+
+function terminal_enqueue(string $str)
+{
+	terminal_enqueue_flush($str, $do_flush = false);
+}
+
+function terminal_flush_line()
+{
+	terminal_enqueue_flush(null, $do_flush = true);
+}
+
 function progress_num(int $pos, int $processed_bytes, int $total_bytes = null) : string
 {
 	$R = function(int $n = null) : ?int { if ($n === null) return $n; return $n / 1024; };
@@ -85,9 +116,10 @@ function show_progress(int $processed_bytes, int $total_bytes = null) {
 	else
 		terminal_output("\n");
 
-	terminal_output($XPOS(progress_num($pos, $processed_bytes, $total_bytes)));
-	terminal_output($XPOS($separator = ' '));
-	terminal_output($XPOS(progress_bar($pos, $processed_bytes, $total_bytes)));
+	terminal_enqueue($XPOS(progress_num($pos, $processed_bytes, $total_bytes)));
+	terminal_enqueue($XPOS($separator = ' '));
+	terminal_enqueue($XPOS(progress_bar($pos, $processed_bytes, $total_bytes)));
+	terminal_flush_line();
 }
 
 function adjust_quant(int $read_quant, int $processed_bytes) : int
@@ -101,6 +133,21 @@ function adjust_quant(int $read_quant, int $processed_bytes) : int
 }
 
 function terminal_op_clear_line()
+{
+	if (0)
+		terminal_lineaddr_op_clear_line();
+	else
+		terminal_dumb_op_clear_line();
+}
+
+function terminal_dumb_op_clear_line()
+{
+	$cnt = terminal_last_line_len();
+	$rubout = "\x08";
+	terminal_output(str_repeat($rubout, $cnt));
+}
+
+function terminal_lineaddr_op_clear_line()
 {
 	$str = "\r";
 	terminal_output($str);
