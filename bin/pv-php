@@ -132,9 +132,26 @@ function adjust_quant(int $read_quant, int $processed_bytes) : int
 	return max($a);
 }
 
+function terminal_is_lineaddr() : bool
+{
+	static $ret = null;
+
+	if ($ret === null) {
+		switch (getenv('TERM')) {
+		default:
+		case 'dumb':
+			$ret = false;
+			break;
+		case 'linux':
+		case 'xterm':
+			$ret = true; } }
+
+	return $ret;
+}
+
 function terminal_op_clear_line()
 {
-	if (0)
+	if (terminal_is_lineaddr())
 		terminal_lineaddr_op_clear_line();
 	else
 		terminal_dumb_op_clear_line();
