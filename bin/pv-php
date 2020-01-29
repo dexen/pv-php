@@ -10,12 +10,29 @@ class Config
 {
 	public $read_quant = 16 * 1024;
 	public $total_bytes = null;
+	public $terminal_nr_columns;
 
 	function totalBytesConfigFromInputs($hin)
 	{
 		$a = fstat($hin);
 		if ($a['size'] > 0)
 			$this->total_bytes = $a['size'];
+	}
+
+	function doEnvironment()
+	{
+			# doesn't seem to work?
+			# the var exists in bash, but doesn't get exported to processes - why?
+		$n = getenv('COLUMNS');
+		if (!empty($n))
+			$this->terminal_nr_columns = (int)$n;
+	}
+
+	function doTerminalDetection()
+	{
+		$tput_n = (int)exec('tput cols');
+		if (!empty($tput_n))
+			$this->terminal_nr_columns = $tput_n;
 	}
 
 	function doGetopt(array $argv)
@@ -102,7 +119,7 @@ function progress_bar(int $pos, int $processed_bytes, Config $Config) : string
 	$fudge = ' ';
 	$fudge_width = strlen($fudge);
 
-	$bar_width = terminal_nr_columns() - $pos - $perc_msg_width - $fudge_width;
+	$bar_width = $Config->terminal_nr_columns - $pos - $perc_msg_width - $fudge_width;
 	$endp_markers_width = strlen($endpA_marker .$endpB_marker);
 	$vpsegment_marker_width = strlen($vpsegment_marker);
 	$total_segments = $bar_width - $endp_markers_width;
@@ -117,23 +134,6 @@ function progress_bar(int $pos, int $processed_bytes, Config $Config) : string
 	return $endpA_marker .str_repeat($vesegment_maker, $vesegments) .str_repeat($vpsegment_marker, $vpsegments)
 		.str_repeat($bsegment_marker, $bsegments) .$endpB_marker
 		.$perc_msg;
-}
-
-function terminal_nr_columns() : int
-{
-	static $tput_n = null;
-	if ($tput_n === null)
-			# cast to INT to avoid untrusted data (zero is fine rly)
-		$tput_n = (int)exec('tput cols');
-
-		# doesn't seem to work?
-		# the var exists in bash, but doesn't get exported to processes - why?
-	$n = getenv('COLUMNS');
-	if (empty($n))
-		$n = $tput_n;
-	if (empty($n))
-		$n = 80;
-	return $n;
 }
 
 function show_progress(int $processed_bytes, Config $Config) {
@@ -210,6 +210,8 @@ $processed_bytes = 0;
 
 $Config = new Config();
 $Config->totalBytesConfigFromInputs($hin);
+$Config->doTerminalDetection();
+$Config->doEnvironment();
 $Config->doGetopt($argv);
 
 $continue_copy = true;
