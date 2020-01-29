@@ -6,6 +6,12 @@ ini_set('error_reporting', E_ALL);
 function td(...$a) { foreach ($a as $v) var_dump($v); die('td()'); }
 function tp(...$a) { foreach ($a as $v) var_dump($v); echo 'tp()'; if (count($a)===1) return $a[0]; }
 
+class Config
+{
+	public $read_quant = 16 * 1024;
+	public $total_bytes = null;
+}
+
 function die_with_error(int $code, string $str)
 {
 	fputs(STDERR, $str .PHP_EOL);
@@ -49,14 +55,14 @@ function terminal_flush_line()
 	terminal_enqueue_flush(null, $do_flush = true);
 }
 
-function progress_num(int $pos, int $processed_bytes, int $total_bytes = null) : string
+function progress_num(int $pos, int $processed_bytes, Config $Config) : string
 {
 	$R = function(int $n = null) : ?int { if ($n === null) return $n; return $n / 1024; };
 	$F2 = function(int $n = null) : string { if ($n === null) return '?'; return sprintf('%dk', $n); };
-	return sprintf("%s / %s", $F2($R($processed_bytes)), $F2($R($total_bytes)));
+	return sprintf("%s / %s", $F2($R($processed_bytes)), $F2($R($Config->total_bytes)));
 }
 
-function progress_bar(int $pos, int $processed_bytes, int $total_bytes = null) : string
+function progress_bar(int $pos, int $processed_bytes, Config $Config) : string
 {
 	$endpA_marker = '[';
 	$endpB_marker = ']';
@@ -64,11 +70,11 @@ function progress_bar(int $pos, int $processed_bytes, int $total_bytes = null) :
 	$vpsegment_marker = '>';
 	$bsegment_marker = ' ';
 
-	if ($total_bytes === null) {
+	if ($Config->total_bytes === null) {
 		$v = 1.0;
 		$perc_msg = '??%'; }
 	else {
-		$v = 1.0 * $processed_bytes / $total_bytes;
+		$v = 1.0 * $processed_bytes / $Config->total_bytes;
 		$perc_msg = sprintf(' % 5.1f%%', $v * 100); }
 
 	$perc_msg_width = strlen($perc_msg);
@@ -109,7 +115,7 @@ function terminal_nr_columns() : int
 	return $n;
 }
 
-function show_progress(int $processed_bytes, int $total_bytes = null) {
+function show_progress(int $processed_bytes, Config $Config) {
 	$pos = 0;
 	$XPOS = function(string $str) use(&$pos) : string
 	{
@@ -122,20 +128,20 @@ function show_progress(int $processed_bytes, int $total_bytes = null) {
 	else
 		terminal_output("\n");
 
-	terminal_enqueue($XPOS(progress_num($pos, $processed_bytes, $total_bytes)));
+	terminal_enqueue($XPOS(progress_num($pos, $processed_bytes, $Config)));
 	terminal_enqueue($XPOS($separator = ' '));
-	terminal_enqueue($XPOS(progress_bar($pos, $processed_bytes, $total_bytes)));
+	terminal_enqueue($XPOS(progress_bar($pos, $processed_bytes, $Config)));
 	terminal_flush_line();
 }
 
-function adjust_quant(int $read_quant, int $processed_bytes) : int
+function adjust_quant(Config $Config, int $processed_bytes)
 {
-	$a = [ $read_quant ];
+	$a = [ $Config->read_quant ];
 	if ($processed_bytes > 128 * 1024)
 		$a[] = 128 * 1024;
 #	if ($processed_bytes > 1024*1024)
 #		$a[] = 1024 * 1024;
-	return max($a);
+	$Config->read_quant = max($a);
 }
 
 function terminal_is_lineaddr() : bool
@@ -179,13 +185,13 @@ function terminal_lineaddr_op_clear_line()
 $hin = STDIN;
 $hout = STDOUT;
 
-$read_quant = 16 * 1024;
 $processed_bytes = 0;
-$total_bytes = null;
+
+$Config = new Config();
 
 $a = fstat($hin);
 if ($a['size'] > 0)
-	$total_bytes = $a['size'];
+	$Config->total_bytes = $a['size'];
 
 $continue_copy = true;
 while ($continue_copy) {
@@ -195,7 +201,7 @@ while ($continue_copy) {
 	if (feof($hout))
 		die_with_error(1, 'Output write error');
 
-	$data = fread($hin, $read_quant);
+	$data = fread($hin, $Config->read_quant);
 	if ($data === false)
 		die_with_error(2, 'Input read error');
 
@@ -204,8 +210,8 @@ while ($continue_copy) {
 		die_with_error(1, 'Output write error');
 
 	$processed_bytes += strlen($data);
-	show_progress($processed_bytes, $total_bytes);
-	$read_quant = adjust_quant($read_quant, $processed_bytes);
+	show_progress($processed_bytes, $Config);
+	adjust_quant($Config, $processed_bytes);
 }
 
 terminal_output("\n");
