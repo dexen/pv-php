@@ -2,7 +2,6 @@
 <?php
 
 ini_set('error_reporting', E_ALL);
-ini_set('display_errors', true);
 
 function td(...$a) { foreach ($a as $v) var_dump($v); die('td()'); }
 
