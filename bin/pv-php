@@ -10,6 +10,13 @@ class Config
 {
 	public $read_quant = 16 * 1024;
 	public $total_bytes = null;
+
+	function totalBytesConfigFromInputs($hin)
+	{
+		$a = fstat($hin);
+		if ($a['size'] > 0)
+			$this->total_bytes = $a['size'];
+	}
 }
 
 function die_with_error(int $code, string $str)
@@ -188,10 +195,7 @@ $hout = STDOUT;
 $processed_bytes = 0;
 
 $Config = new Config();
-
-$a = fstat($hin);
-if ($a['size'] > 0)
-	$Config->total_bytes = $a['size'];
+$Config->totalBytesConfigFromInputs($hin);
 
 $continue_copy = true;
 while ($continue_copy) {
