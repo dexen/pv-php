@@ -35,6 +35,31 @@ class Config
 			$this->terminal_nr_columns = $tput_n;
 	}
 
+	protected
+	function interpretBytesSpecifier(string $str) : int
+	{
+		$n = $m = null;
+		sscanf($str, '%d%s', $n, $m);
+
+		switch ($m) {
+		case 'T':
+		case 't':
+			$n *= 1024;
+		case 'G':
+		case 'g':
+			$n *= 1024;
+		case 'M':
+		case 'm':
+			$n *= 1024;
+		case 'K':
+		case 'k':
+			$n *= 1024;
+		case null:
+			return $n;
+		default:
+			die_with_error(3, sprintf('unsupported bytes multiplier "%s"', $m)); }
+	}
+
 	function doGetopt(array $argv)
 	{
 		$a = getopt('s:q:v', [ 'size:' ]);
@@ -43,7 +68,7 @@ class Config
 			switch ($opt) {
 			case 's':
 			case 'size':
-				$this->total_bytes = $v;
+				$this->total_bytes = $this->interpretBytesSpecifier($v);
 				break;
 			default:
 				die_with_error(3, sprintf('unsupported option: "%s"', $opt)); } }
