@@ -17,6 +17,20 @@ class Config
 		if ($a['size'] > 0)
 			$this->total_bytes = $a['size'];
 	}
+
+	function doGetopt(array $argv)
+	{
+		$a = getopt('s:q:v', [ 'size:' ]);
+
+		foreach ($a as $opt => $v) {
+			switch ($opt) {
+			case 's':
+			case 'size':
+				$this->total_bytes = $v;
+				break;
+			default:
+				die_with_error(3, sprintf('unsupported option: "%s"', $opt)); } }
+	}
 }
 
 function die_with_error(int $code, string $str)
@@ -196,6 +210,7 @@ $processed_bytes = 0;
 
 $Config = new Config();
 $Config->totalBytesConfigFromInputs($hin);
+$Config->doGetopt($argv);
 
 $continue_copy = true;
 while ($continue_copy) {
