@@ -19,7 +19,9 @@ Quoting original `pv`'s manual:
 
 ## Usage
 
-No options/switches supported as of yet.
+A subset of options of original `pv` is supported. The aim is to eventually become fully compatible.
+
+`-s SIZE` / `--size SIZE` - assume SIZE bytes to be transferred, for purposes of ETA and completion percentage calculation. Supports 'K' / 'M' / 'G' / 'T' suffix to specify larger units (IEC standard - multiplies of 1024).
 
 ## Environment
 
