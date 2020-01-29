@@ -5,6 +5,12 @@ ini_set('error_reporting', E_ALL);
 
 function td(...$a) { foreach ($a as $v) var_dump($v); die('td()'); }
 
+function die_with_error(int $code, string $str)
+{
+	fputs(STDERR, $str .PHP_EOL);
+	die($code);
+}
+
 function terminal_output(string $str)
 {
 	$hinfo = STDERR;
@@ -185,13 +191,17 @@ while ($continue_copy) {
 	if (feof($hin)) {
 		$continue_copy = false;
 		break; }
-	if (feof($hout)) {
-		terminal_output("UNEXPECTED WRITE ERROR\n");
-		$continue_copy = false;
-		break; }
+	if (feof($hout))
+		die_with_error(1, 'Output write error');
 
 	$data = fread($hin, $read_quant);
-	fwrite($hout, $data);
+	if ($data === false)
+		die_with_error(2, 'Input read error');
+
+	$v = fwrite($hout, $data);
+	if ($v === false)
+		die_with_error(1, 'Output write error');
+
 	$processed_bytes += strlen($data);
 	show_progress($processed_bytes, $total_bytes);
 	$read_quant = adjust_quant($read_quant, $processed_bytes);
