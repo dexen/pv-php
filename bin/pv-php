@@ -180,8 +180,6 @@ $a = fstat($hin);
 if ($a['size'] > 0)
 	$total_bytes = $a['size'];
 
-#td(compact('total_bytes'));
-
 $continue_copy = true;
 while ($continue_copy) {
 	if (feof($hin)) {
