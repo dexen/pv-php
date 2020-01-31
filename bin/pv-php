@@ -77,11 +77,23 @@ class Config
 
 class State
 {
+	public $time_start_sec;	# a float from microtime()
 	public $processed_bytes;
 
 	function __construct()
 	{
+		$this->time_start_sec = $this->timeCurrentSec();
 		$this->processed_bytes = 0;
+	}
+
+	function timeCurrentSec() : float
+	{
+		return microtime($get_as_float = true);
+	}
+
+	function timeRunningSec() : float
+	{
+		return $this->timeCurrentSec() - $this->time_start_sec;
 	}
 }
 
@@ -171,6 +183,18 @@ function progress_bar(int $pos, Config $Config, State $State) : string
 		.$perc_msg;
 }
 
+function running_time(int $pos, Config $Config, State $State) : string
+{
+		# force integer division
+	$s = (int)round($State->timeRunningSec());
+	$m = $s / 60;
+	$s = $s % 60;
+	$h = $m / 60;
+	$m = $m % 60;
+
+	return sprintf('%02d:%02d:%02d', $h, $m, $s);
+}
+
 function show_progress(Config $Config, State $State) {
 	$pos = 0;
 	$XPOS = function(string $str) use(&$pos) : string
@@ -185,6 +209,8 @@ function show_progress(Config $Config, State $State) {
 		terminal_output("\n");
 
 	terminal_enqueue($XPOS(progress_num($pos, $Config, $State)));
+	terminal_enqueue($XPOS($separator = ' '));
+	terminal_enqueue($XPOS(running_time($pos, $Config, $State)));
 	terminal_enqueue($XPOS($separator = ' '));
 	terminal_enqueue($XPOS(progress_bar($pos, $Config, $State)));
 	terminal_flush_line();
