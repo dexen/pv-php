@@ -75,6 +75,16 @@ class Config
 	}
 }
 
+class State
+{
+	public $processed_bytes;
+
+	function __construct()
+	{
+		$this->processed_bytes = 0;
+	}
+}
+
 function die_with_error(int $code, string $str)
 {
 	fputs(STDERR, $str .PHP_EOL);
@@ -118,14 +128,14 @@ function terminal_flush_line()
 	terminal_enqueue_flush(null, $do_flush = true);
 }
 
-function progress_num(int $pos, int $processed_bytes, Config $Config) : string
+function progress_num(int $pos, Config $Config, State $State) : string
 {
 	$R = function(int $n = null) : ?int { if ($n === null) return $n; return $n / 1024; };
 	$F2 = function(int $n = null) : string { if ($n === null) return '?'; return sprintf('%dk', $n); };
-	return sprintf("%s / %s", $F2($R($processed_bytes)), $F2($R($Config->total_bytes)));
+	return sprintf("%s / %s", $F2($R($State->processed_bytes)), $F2($R($Config->total_bytes)));
 }
 
-function progress_bar(int $pos, int $processed_bytes, Config $Config) : string
+function progress_bar(int $pos, Config $Config, State $State) : string
 {
 	$endpA_marker = '[';
 	$endpB_marker = ']';
@@ -137,7 +147,7 @@ function progress_bar(int $pos, int $processed_bytes, Config $Config) : string
 		$v = 1.0;
 		$perc_msg = '??%'; }
 	else {
-		$v = 1.0 * $processed_bytes / $Config->total_bytes;
+		$v = 1.0 * $State->processed_bytes / $Config->total_bytes;
 		$perc_msg = sprintf(' % 5.1f%%', $v * 100); }
 
 	$perc_msg_width = strlen($perc_msg);
@@ -161,7 +171,7 @@ function progress_bar(int $pos, int $processed_bytes, Config $Config) : string
 		.$perc_msg;
 }
 
-function show_progress(int $processed_bytes, Config $Config) {
+function show_progress(Config $Config, State $State) {
 	$pos = 0;
 	$XPOS = function(string $str) use(&$pos) : string
 	{
@@ -174,18 +184,18 @@ function show_progress(int $processed_bytes, Config $Config) {
 	else
 		terminal_output("\n");
 
-	terminal_enqueue($XPOS(progress_num($pos, $processed_bytes, $Config)));
+	terminal_enqueue($XPOS(progress_num($pos, $Config, $State)));
 	terminal_enqueue($XPOS($separator = ' '));
-	terminal_enqueue($XPOS(progress_bar($pos, $processed_bytes, $Config)));
+	terminal_enqueue($XPOS(progress_bar($pos, $Config, $State)));
 	terminal_flush_line();
 }
 
-function adjust_quant(Config $Config, int $processed_bytes)
+function adjust_quant(Config $Config, State $State)
 {
 	$a = [ $Config->read_quant ];
-	if ($processed_bytes > 128 * 1024)
+	if ($State->processed_bytes > 128 * 1024)
 		$a[] = 128 * 1024;
-#	if ($processed_bytes > 1024*1024)
+#	if ($State->processed_bytes > 1024*1024)
 #		$a[] = 1024 * 1024;
 	$Config->read_quant = max($a);
 }
@@ -231,13 +241,13 @@ function terminal_lineaddr_op_clear_line()
 $hin = STDIN;
 $hout = STDOUT;
 
-$processed_bytes = 0;
-
 $Config = new Config();
 $Config->totalBytesConfigFromInputs($hin);
 $Config->doTerminalDetection();
 $Config->doEnvironment();
 $Config->doGetopt($argv);
+
+$State = new State();
 
 $continue_copy = true;
 while ($continue_copy) {
@@ -255,9 +265,9 @@ while ($continue_copy) {
 	if ($v === false)
 		die_with_error(1, 'Output write error');
 
-	$processed_bytes += strlen($data);
-	show_progress($processed_bytes, $Config);
-	adjust_quant($Config, $processed_bytes);
+	$State->processed_bytes += strlen($data);
+	show_progress($Config, $State);
+	adjust_quant($Config, $State);
 }
 
 terminal_output("\n");
