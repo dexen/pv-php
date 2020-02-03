@@ -195,6 +195,40 @@ function running_time(int $pos, Config $Config, State $State) : string
 	return sprintf('%02d:%02d:%02d', $h, $m, $s);
 }
 
+function pick_iec_unit(float $bs) : array
+{
+	$unit = 'B';
+
+	if ($bs > 1024) {
+		$bs /= 1024;
+		$unit = 'KiB'; }
+	if ($bs > 1024) {
+		$bs /= 1024;
+		$unit = 'MiB'; }
+	if ($bs > 1024) {
+		$bs /= 1024;
+		$unit = 'GiB'; }
+	if ($bs > 1024) {
+		$bs /= 1024;
+		$unit = 'TiB'; }
+	if ($bs > 1024) {
+		$bs /= 1024;
+		$unit = 'PiB'; }
+
+		# not really needed - we use '%.3g' instead
+	$magnitude = 2-floor(log($bs, 10));
+
+	return [ $unit, $bs ];
+}
+
+function overall_bandwidth_info(int $pos, Config $Config, State $State) : string
+{
+	$bw = $State->processed_bytes / $State->timeRunningSec();
+	[ $unit, $bs ] = pick_iec_unit($bw);
+
+	return sprintf('[ %.3g %s/s ]', $bs, $unit);
+}
+
 function show_progress(Config $Config, State $State) {
 	$pos = 0;
 	$XPOS = function(string $str) use(&$pos) : string
@@ -211,6 +245,9 @@ function show_progress(Config $Config, State $State) {
 	terminal_enqueue($XPOS(progress_num($pos, $Config, $State)));
 	terminal_enqueue($XPOS($separator = ' '));
 	terminal_enqueue($XPOS(running_time($pos, $Config, $State)));
+	terminal_enqueue($XPOS($separator = ' '));
+		# i think the original uses momentary bandwidth...?
+	terminal_enqueue($XPOS(overall_bandwidth_info($pos, $Config, $State)));
 	terminal_enqueue($XPOS($separator = ' '));
 	terminal_enqueue($XPOS(progress_bar($pos, $Config, $State)));
 	terminal_flush_line();
