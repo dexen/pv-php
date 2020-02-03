@@ -197,24 +197,18 @@ function running_time(int $pos, Config $Config, State $State) : string
 
 function pick_iec_unit(float $bs) : array
 {
-	$unit = 'B';
-
 	$u = [
 		1 => 'KiB',
 		2 => 'MiB',
 		3 => 'GiB',
 		4 => 'TiB',
-		5 => 'PiB',
-	];
+		5 => 'PiB', ];
 
 	$se = intval(floor(log($bs, 1024)));
-	if (array_key_exists($se, $u)) {
-		$unit = $u[$se];
-		$xbs = 1.0 * $bs / (1024 ** $se); }
+	if (array_key_exists($se, $u))
+		return [ $u[$se], 1.0 * $bs / (1024 ** $se) ];
 	else
-		$xbs = $bs;
-
-	return [ $unit, $xbs ];
+		return [ 'B', $bs ];
 }
 
 function overall_bandwidth_info(int $pos, Config $Config, State $State) : string
