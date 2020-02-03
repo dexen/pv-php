@@ -158,8 +158,8 @@ function terminal_flush_line()
 
 function progress_num(int $pos, Config $Config, State $State) : string
 {
-	[ $unit, $bs ] = pick_iec_unit($State->processed_bytes);
-	return sprintf('%4.3g%s', $bs, $unit);
+	[ $unit, $bs, $fmt ] = pick_iec_unit($State->processed_bytes);
+	return sprintf($fmt .'%s', $bs, $unit);
 }
 
 function progress_bar(int $pos, Config $Config, State $State) : string
@@ -213,6 +213,7 @@ function running_time(int $pos, Config $Config, State $State) : string
 function pick_iec_unit(float $bs) : array
 {
 	$u = [
+		0 => 'B',
 		1 => 'KiB',
 		2 => 'MiB',
 		3 => 'GiB',
@@ -221,17 +222,24 @@ function pick_iec_unit(float $bs) : array
 
 	$se = intval(floor(log($bs, 1024)));
 	if (array_key_exists($se, $u))
-		return [ $u[$se], 1.0 * $bs / (1024 ** $se) ];
+		;
 	else
-		return [ 'B', $bs ];
+		$se = 0;
+
+	$unit = $u[$se];
+	$xbs = 1.0 * $bs / (1024 ** $se);
+
+	$fmt = '%4.3g';
+
+	return [ $unit, $xbs, $fmt ];
 }
 
 function overall_bandwidth_info(int $pos, Config $Config, State $State) : string
 {
 	$bw = $State->processed_bytes / $State->timeRunningSec();
-	[ $unit, $bs ] = pick_iec_unit($bw);
+	[ $unit, $bs, $fmt ] = pick_iec_unit($bw);
 
-	return sprintf('[%4.3g%s/s]', $bs, $unit);
+	return sprintf('[' .$fmt .'%s/s]', $bs, $unit);
 }
 
 function show_progress(Config $Config, State $State) {
