@@ -229,7 +229,7 @@ function pick_iec_unit(float $bs, int $width = 4) : array
 	$unit = $u[$se];
 	$xbs = 1.0 * $bs / (1024 ** $se);
 
-	$prec = $width - 2 - intval(floor(log($xbs, 10)));
+	$prec = $width - 2 - intval(floor(log(round($xbs, 1), 10)));
 	$fmt = sprintf('%%%d.%df', $width, $prec);
 
 	return [ $unit, $xbs, $fmt ];
