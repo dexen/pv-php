@@ -17,6 +17,17 @@ class Config
 		$a = fstat($hin);
 		if ($a['size'] > 0)
 			$this->total_bytes = $a['size'];
+		else if (stream_get_meta_data($hin)['seekable']) {	# fstat() does not give nice size for block devices
+			$orig = ftell($hin);
+			$v = fseek($hin, 0, SEEK_END);
+			if ($v === 0) {
+				$v = ftell($hin);
+				if ($v === false)
+					die_with_error('unexpected failure to ftell(input)');
+				$this->total_bytes = $v;
+				$v = fseek($hin, $orig);
+				if ($v !== 0)
+					die_with_error('unexpected failure to fseek(input) back to original position'); } }
 	}
 
 	function doEnvironment()
