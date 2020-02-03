@@ -153,9 +153,8 @@ function terminal_flush_line()
 
 function progress_num(int $pos, Config $Config, State $State) : string
 {
-	$R = function(int $n = null) : ?int { if ($n === null) return $n; return $n / 1024; };
-	$F2 = function(int $n = null) : string { if ($n === null) return '?'; return sprintf('%dk', $n); };
-	return sprintf("%s / %s", $F2($R($State->processed_bytes)), $F2($R($Config->total_bytes)));
+	[ $unit, $bs ] = pick_iec_unit($State->processed_bytes);
+	return sprintf('%4.3g%s', $bs, $unit);
 }
 
 function progress_bar(int $pos, Config $Config, State $State) : string
@@ -227,7 +226,7 @@ function overall_bandwidth_info(int $pos, Config $Config, State $State) : string
 	$bw = $State->processed_bytes / $State->timeRunningSec();
 	[ $unit, $bs ] = pick_iec_unit($bw);
 
-	return sprintf('[ %.3g %s/s ]', $bs, $unit);
+	return sprintf('[%4.3g%s/s]', $bs, $unit);
 }
 
 function show_progress(Config $Config, State $State) {
