@@ -108,6 +108,11 @@ class State
 	}
 }
 
+function debug_printf(string $fmt, ...$a)
+{
+	fputs(STDERR, sprintf($fmt, ...$a));
+}
+
 function die_with_error(int $code, string $str)
 {
 	fputs(STDERR, $str .PHP_EOL);
