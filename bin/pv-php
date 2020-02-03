@@ -210,7 +210,7 @@ function running_time(int $pos, Config $Config, State $State) : string
 	return sprintf('%02d:%02d:%02d', $h, $m, $s);
 }
 
-function pick_iec_unit(float $bs) : array
+function pick_iec_unit(float $bs, int $width = 4) : array
 {
 	$u = [
 		0 => 'B',
@@ -229,7 +229,8 @@ function pick_iec_unit(float $bs) : array
 	$unit = $u[$se];
 	$xbs = 1.0 * $bs / (1024 ** $se);
 
-	$fmt = '%4.3g';
+	$prec = $width - 2 - intval(floor(log($xbs, 10)));
+	$fmt = sprintf('%%%d.%df', $width, $prec);
 
 	return [ $unit, $xbs, $fmt ];
 }
