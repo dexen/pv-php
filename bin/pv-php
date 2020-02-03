@@ -183,7 +183,7 @@ function progress_bar(int $pos, Config $Config, State $State) : string
 	$total_segments = max(0, $total_segments);
 	$total_segments = min($total_segments, $bar_width);
 
-	$vsegments = floor($total_segments * $v);
+	$vsegments = min(floor($total_segments * $v), $total_segments);
 	$vpsegments = ($vsegments > 0);
 	$vesegments = $vsegments - ($vpsegments * $vpsegment_marker_width);
 	$bsegments = $total_segments - $vsegments;
