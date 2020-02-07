@@ -328,8 +328,10 @@ case 0:
 case 1:
 	if ($argv2[0] === '-')
 		$hin = STDIN;
-	else
+	else {
 		$hin = fopen($argv2[0], 'rb');
+		if ($hin === false)
+			die_with_error(2, sprintf('Failed to open input "%s"', $argv2[0])); }
 	break;
 default:
 	throw new Exception('unsupported case: multiple input files'); }
