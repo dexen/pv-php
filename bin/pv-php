@@ -354,15 +354,28 @@ while ($continue_copy) {
 	if (feof($hout))
 		die_with_error(1, 'Output write error');
 
-	$data = fread($hin, $Config->read_quant);
-	if ($data === false)
-		die_with_error(2, 'Input read error');
+	$reads = [ $hin ];
+	$writes = [ $hout ];
+	$exceptions = [ $hin, $hout ];
 
-	$v = fwrite($hout, $data);
+	$v = stream_select($reads, $writes, $excepts, 0, 200*1000);
 	if ($v === false)
-		die_with_error(1, 'Output write error');
+		throw new RuntimeException('stream_select() failed');
 
-	$State->processed_bytes += strlen($data);
+	if ($excepts)
+		throw new die_with_error(3, 'unexpected error conditions on I/O');
+
+	if ($reads) {
+		$data = fread($hin, $Config->read_quant);
+		if ($data === false)
+			die_with_error(2, 'Input read error'); }
+
+	if ($writes) {
+		$v = fwrite($hout, $data);
+		if ($v === false)
+			die_with_error(1, 'Output write error');
+		$State->processed_bytes += strlen($data); }
+
 	show_progress($Config, $State);
 	adjust_quant($Config, $State);
 }
