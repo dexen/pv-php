@@ -373,19 +373,21 @@ $Config->doGetopt($argv);
 
 $State = new State();
 
-$continue_copy = true;
+$continue_read = true;
 $data = null;
-while ($continue_copy) {
-	if (feof($hin)) {
-		$continue_copy = false;
-		break; }
+while ($continue_read || ($data !== null)) {
+	if (feof($hin))
+		$continue_read = false;
 	if (feof($hout))
 		die_with_error(1, 'Output write error');
 
-	$reads = [ $hin ];
-	if ($data !== null)
-		$writes = [ $hout ];
-	$exceptions = [ $hin, $hout ];
+	$reads = $writes = $exceptions = [];
+	if ($continue_read && ($data === null)) {
+		$reads[] = $hin;
+		$exceptions[] = $hin; }
+	if ($data !== null) {
+		$writes[] = $hout;
+		$exceptions[] = $hout; }
 
 	$v = stream_select($reads, $writes, $excepts, 0, 200*1000);
 	if ($v === false)
