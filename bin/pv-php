@@ -75,13 +75,17 @@ class Config
 	function doGetopt(array $argv) : array
 	{
 		$pos = null;
-		$a = getopt('s:q:v', [ 'size:' ], $pos);
+		$a = getopt('i:s:q:v', [ 'interval', 'size:' ], $pos);
 
 		foreach ($a as $opt => $v) {
 			switch ($opt) {
 			case 's':
 			case 'size':
 				$this->total_bytes = $this->interpretBytesSpecifier($v);
+				break;
+			case 'i':
+			case 'interval':
+				$this->update_interval = (float)$v;
 				break;
 			default:
 				die_with_error(3, sprintf('unsupported option: "%s"', $opt)); } }
