@@ -23,6 +23,8 @@ A subset of options of original `pv` is supported. The aim is to eventually beco
 
 `-s SIZE` / `--size SIZE` - assume SIZE bytes to be transferred, for purposes of ETA and completion percentage calculation. Supports 'K' / 'M' / 'G' / 'T' suffix to specify larger units (IEC standard - multiplies of 1024).
 
+`-i INTERVAL` / `--interval INTERVAL` - udate display at about INTERVAL seconds. Decimal values are supported. Default: 0.2 seconds.
+
 ## Environment
 
 Environment variables influencing the script
