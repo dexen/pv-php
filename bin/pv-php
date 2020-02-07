@@ -326,7 +326,10 @@ case 0:
 	$hin = STDIN;
 	break;
 case 1:
-	$hin = fopen($argv2[0], 'rb');
+	if ($argv2[0] === '-')
+		$hin = STDIN;
+	else
+		$hin = fopen($argv2[0], 'rb');
 	break;
 default:
 	throw new Exception('unsupported case: multiple input files'); }
