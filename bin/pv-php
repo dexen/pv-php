@@ -11,6 +11,7 @@ class Config
 	public $read_quant = 16 * 1024;
 	public $total_bytes = null;
 	public $terminal_nr_columns;
+	public $update_interval = 0.2;
 
 	function totalBytesConfigFromInputs($hin)
 	{
@@ -93,11 +94,13 @@ class State
 {
 	public $time_start_sec;	# a float from microtime()
 	public $processed_bytes;
+	public $time_last_update;
 
 	function __construct()
 	{
 		$this->time_start_sec = $this->timeCurrentSec();
 		$this->processed_bytes = 0;
+		$this->time_last_update = null;
 	}
 
 	function timeCurrentSec() : float
@@ -108,6 +111,26 @@ class State
 	function timeRunningSec() : float
 	{
 		return $this->timeCurrentSec() - $this->time_start_sec;
+	}
+
+	function time_last_update_check_and_set(float $update_interval) : bool
+	{
+		$t = $this->timeCurrentSec();
+		if ($t >= ($this->time_last_update + $update_interval)) {
+			$this->time_last_update = $t;
+			return true; }
+		else
+			return false;
+	}
+
+	function time_last_update_elapsed() : float
+	{
+		return $this->timeCurrentSec() - $this->time_last_update;
+	}
+
+	function time_last_update_set()
+	{
+		$this->time_last_update = $this->timeCurrentSec();
 	}
 }
 
@@ -376,7 +399,9 @@ while ($continue_copy) {
 			die_with_error(1, 'Output write error');
 		$State->processed_bytes += strlen($data); }
 
-	show_progress($Config, $State);
+	if ($State->time_last_update_check_and_set($Config->update_interval))
+		show_progress($Config, $State);
+
 	adjust_quant($Config, $State);
 }
 
