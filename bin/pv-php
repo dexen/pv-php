@@ -71,9 +71,10 @@ class Config
 			die_with_error(3, sprintf('unsupported bytes multiplier "%s"', $m)); }
 	}
 
-	function doGetopt(array $argv)
+	function doGetopt(array $argv) : array
 	{
-		$a = getopt('s:q:v', [ 'size:' ]);
+		$pos = null;
+		$a = getopt('s:q:v', [ 'size:' ], $pos);
 
 		foreach ($a as $opt => $v) {
 			switch ($opt) {
@@ -83,6 +84,8 @@ class Config
 				break;
 			default:
 				die_with_error(3, sprintf('unsupported option: "%s"', $opt)); } }
+
+		return array_slice($argv, $pos);
 	}
 }
 
@@ -315,7 +318,19 @@ function terminal_lineaddr_op_clear_line()
 	terminal_output($str);
 }
 
-$hin = STDIN;
+	# dummy run, just to get the $argv2
+$argv2 = (new Config())->doGetopt($argv);
+
+switch (count($argv2)) {
+case 0:
+	$hin = STDIN;
+	break;
+case 1:
+	$hin = fopen($argv2[0], 'rb');
+	break;
+default:
+	throw new Exception('unsupported case: multiple input files'); }
+
 $hout = STDOUT;
 
 $Config = new Config();
