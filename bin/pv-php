@@ -414,4 +414,7 @@ while ($continue_read || ($data !== null)) {
 	adjust_quant($Config, $State);
 }
 
+if (fclose($hout) === false)
+	die_with_error(1, 'Output write error');
+
 terminal_output("\n");
