@@ -374,6 +374,7 @@ $Config->doGetopt($argv);
 $State = new State();
 
 $continue_copy = true;
+$data = null;
 while ($continue_copy) {
 	if (feof($hin)) {
 		$continue_copy = false;
@@ -382,7 +383,8 @@ while ($continue_copy) {
 		die_with_error(1, 'Output write error');
 
 	$reads = [ $hin ];
-	$writes = [ $hout ];
+	if ($data !== null)
+		$writes = [ $hout ];
 	$exceptions = [ $hin, $hout ];
 
 	$v = stream_select($reads, $writes, $excepts, 0, 200*1000);
@@ -401,7 +403,8 @@ while ($continue_copy) {
 		$v = fwrite($hout, $data);
 		if ($v === false)
 			die_with_error(1, 'Output write error');
-		$State->processed_bytes += strlen($data); }
+		$State->processed_bytes += strlen($data);
+		$data = null; }
 
 	if ($State->time_last_update_check_and_set($Config->update_interval))
 		show_progress($Config, $State);
