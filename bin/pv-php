@@ -231,13 +231,12 @@ function progress_bar(int $pos, Config $Config, State $State) : string
 function progress_running_time(int $pos, Config $Config, State $State) : string
 {
 		# force integer division
-	$s = (int)round($State->timeRunningSec());
-	$m = $s / 60;
-	$s = $s % 60;
-	$h = $m / 60;
-	$m = $m % 60;
+	$sec = (int)round($State->timeRunningSec());
 
-	return sprintf('%02d:%02d:%02d', $h, $m, $s);
+	return sprintf('%02d:%02d:%02d',
+		$sec / 60 / 60,
+		$sec / 60 % 60,
+		$sec % 60 % 60 );
 }
 
 function pick_iec_unit(float $bs, int $width = 4) : array
