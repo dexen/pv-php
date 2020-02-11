@@ -272,6 +272,23 @@ function progress_overall_bandwidth_info(int $pos, Config $Config, State $State)
 	return sprintf('[' .$fmt .'%s/s]', $bs, $unit);
 }
 
+function estimate_overall_eta_seconds(Config $Config, State $State) : ?int
+{
+	return null;
+}
+
+function progress_overall_eta_info(int $pos, Config $Config, State $State)
+{
+	$sec = estimate_overall_eta_seconds($Config, $State);
+	if ($sec === null)
+		return sprintf('ETA ?:??:??');
+
+	return sprintf('ETA %d:%02d:%02d',
+		$sec / 60 / 60,
+		$sec / 60 % 60,
+		$sec % 60 % 60 );
+}
+
 function show_progress(Config $Config, State $State) {
 	$pos = 0;
 	$XPOS = function(string $str) use(&$pos) : string
@@ -291,6 +308,8 @@ function show_progress(Config $Config, State $State) {
 	terminal_enqueue($XPOS($separator = ' '));
 		# i think the original uses momentary bandwidth...?
 	terminal_enqueue($XPOS(progress_overall_bandwidth_info($pos, $Config, $State)));
+	terminal_enqueue($XPOS($separator = ' '));
+	terminal_enqueue($XPOS(progress_overall_eta_info($pos, $Config, $State)));
 	terminal_enqueue($XPOS($separator = ' '));
 	terminal_enqueue($XPOS(progress_bar($pos, $Config, $State)));
 	terminal_flush_line();
