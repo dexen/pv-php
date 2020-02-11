@@ -284,6 +284,8 @@ function estimate_overall_eta_seconds(Config $Config, State $State) : ?int
 	if ($bw <= 0)
 		return null;
 	$remaining_bytes = $Config->total_bytes - $State->processed_bytes;
+	if ($remaining_bytes < 0)
+		return null;
 	$remaining_seconds = $remaining_bytes / $bw;
 	return (int)ceil($remaining_seconds);
 }
