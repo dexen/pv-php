@@ -264,17 +264,28 @@ function pick_iec_unit(float $bs, int $width = 4) : array
 	return [ $unit, $xbs, $fmt ];
 }
 
+function calc_overall_bandwidth(Config $Config, State $State) : float # [ bytes / sec ]
+{
+	return ((float)$State->processed_bytes) / $State->timeRunningSec();
+}
+
 function progress_overall_bandwidth_info(int $pos, Config $Config, State $State) : string
 {
-	$bw = $State->processed_bytes / $State->timeRunningSec();
-	[ $unit, $bs, $fmt ] = pick_iec_unit($bw);
+	[ $unit, $bs, $fmt ] = pick_iec_unit(calc_overall_bandwidth($Config, $State));
 
 	return sprintf('[' .$fmt .'%s/s]', $bs, $unit);
 }
 
 function estimate_overall_eta_seconds(Config $Config, State $State) : ?int
 {
-	return null;
+	if ($Config->total_bytes === null)
+		return null;
+	$bw = calc_overall_bandwidth($Config, $State);
+	if ($bw <= 0)
+		return null;
+	$remaining_bytes = $Config->total_bytes - $State->processed_bytes;
+	$remaining_seconds = $remaining_bytes / $bw;
+	return (int)ceil($remaining_seconds);
 }
 
 function progress_overall_eta_info(int $pos, Config $Config, State $State)
