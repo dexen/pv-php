@@ -234,8 +234,8 @@ function progress_running_time(int $pos, Config $Config, State $State) : string
 	$sec = (int)round($State->timeRunningSec());
 
 	return sprintf('%02d:%02d:%02d',
-		$sec / 60 / 60,
-		$sec / 60 % 60,
+		intdiv(intdiv($sec, 60), 60),
+		intdiv($sec, 60) % 60,
 		$sec % 60 % 60 );
 }
 
@@ -297,8 +297,8 @@ function progress_overall_eta_info(int $pos, Config $Config, State $State)
 		return sprintf('ETA ?:??:??');
 
 	return sprintf('ETA %d:%02d:%02d',
-		$sec / 60 / 60,
-		$sec / 60 % 60,
+		intdiv(intdiv($sec, 60), 60),
+		intdiv($sec, 60) % 60,
 		$sec % 60 % 60 );
 }
 
